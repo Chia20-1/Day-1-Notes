@@ -98,13 +98,17 @@ async function commentFeature() {
     // await client.connect();
     // console.log("Connected successfully to MongoDB server");
     const db = client.db(dbName);
-    const commentsCollection = db.collection("comments")
+    const commentsCollection = client.db("mydb2").collection("comments")
 
     // Posting comment
     app.post("/comments", async (req, res) => {
         const { picId, username, comment } = req.body;
         const result = await commentsCollection.insertOne({ picId, username, comment });
-        res.status(201).json(result.ops[0]);
+        if (result.acknowledged === true) {
+            return res.sendStatus(200)
+        } else {
+            return res.sendStatus(500)
+        }
     });
 
     // Get Route
@@ -115,13 +119,10 @@ async function commentFeature() {
     })
 
     // Delete route
-    app.delete("/comments/:commentId", async (req, res) => {
-        const { commentId } = req.params;
+    app.delete("/comments/:id", async (req, res) => {
+        const { ObjectId } = require("mongodb")
 
-        // Convert commentId to an ObjectId if you are using MongoDB's default ObjectId
-        const objectId = new ObjectId(commentId);
-
-        const result = await commentsCollection.deleteOne({ _id: objectId });
+        const result = await client.db('mydb2').collection('comments').deleteOne({ _id: new ObjectId(req.params.id) });
 
         if (result.deletedCount === 0) {
             return res.status(404).send("Comment not found");
